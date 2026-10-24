@@ -37,6 +37,8 @@ CLI** — proofread Mongolian writing with contextual judgment.
 ├── scripts/
 │   ├── spellcheck.py   # Python 3 helper (standard library only)
 │   └── spellcheck.js   # Node helper (built-ins only, Node 18+)
+├── tests/
+│   └── skill-command.sh  # the SKILL.md command never lets the shell touch the text
 ├── references/
 │   └── api.md          # endpoint contracts + the request-key algorithm
 └── README.md
@@ -70,8 +72,12 @@ python3 scripts/spellcheck.py "Маргаашийн уулзалтандаа б�
 # Node equivalent:
 node scripts/spellcheck.js "Маргаашийн уулзалтандаа бэлдээд ирээрэй хүү."
 
-# Long text via stdin:
-echo "<text>" | python3 scripts/spellcheck.py
+# Long text, or any text with quotes, backticks or $ in it: a quoted heredoc
+# passes it on stdin without the shell expanding anything (this is what SKILL.md
+# tells agents to use):
+python3 scripts/spellcheck.py <<'MN_TEXT'
+<text>
+MN_TEXT
 
 # Just the misspelled words (skip suggestions):
 python3 scripts/spellcheck.py --check-only "<text>"
@@ -110,6 +116,13 @@ Full endpoint and algorithm details: [`references/api.md`](references/api.md).
   rewriting.
 - It depends on the public `spellcheck.mn` service being reachable.
 - Not affiliated with or endorsed by `spellcheck.mn`.
+
+## Testing
+
+`bash tests/skill-command.sh` fills the SKILL.md command with text containing
+backticks, `$(...)`, quotes and `$VAR`, runs it against stub `python3`/`node`
+(nothing is sent to spellcheck.mn), and checks that the shell runs nothing and the
+helper receives the text unchanged.
 
 ## License
 

@@ -14,6 +14,9 @@ Usage:
     echo "текст" | python3 spellcheck.py
     python3 spellcheck.py --check-only "текст"     # skip suggestions
     python3 spellcheck.py --suggest "уулзалтандаа"  # one word only
+    python3 spellcheck.py <<'MN_TEXT'               # what agents should use:
+    ...text...                                      # nothing in it is expanded
+    MN_TEXT
 
 Output (stdout, JSON):
     {"text": "...", "misspelled": ["word", ...],
@@ -95,15 +98,22 @@ def run(text, with_suggestions=True):
 def _read_input(args):
     if args:
         return " ".join(args)
-    return sys.stdin.read().strip()
+    # Keep the text as written (indentation, trailing spaces); only drop the one
+    # newline that `echo` or a heredoc adds at the end.
+    text = sys.stdin.read()
+    if text.endswith("\r\n"):
+        return text[:-2]
+    if text.endswith("\n"):
+        return text[:-1]
+    return text
 
 
 def main(argv):
     args = argv[1:]
     if args and args[0] == "--suggest":
-        word = " ".join(args[1:]).strip()
+        word = _read_input(args[1:]).strip()
         if not word:
-            raise SystemExit("usage: spellcheck.py --suggest <word>")
+            raise SystemExit("usage: spellcheck.py --suggest <word>  (or pipe the word via stdin)")
         print(json.dumps({"word": word, "suggestions": suggest(word)}, ensure_ascii=False))
         return
     with_suggestions = True
@@ -111,7 +121,7 @@ def main(argv):
         with_suggestions = False
         args = args[1:]
     text = _read_input(args)
-    if not text:
+    if not text.strip():
         raise SystemExit("usage: spellcheck.py [--check-only] \"<text>\"  (or pipe text via stdin)")
     print(json.dumps(run(text, with_suggestions), ensure_ascii=False))
 
