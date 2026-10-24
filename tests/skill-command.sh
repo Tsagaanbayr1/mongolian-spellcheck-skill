@@ -50,6 +50,7 @@ pass=0
 check() { if [ "$2" = 0 ]; then pass=$((pass + 1)); else fail=$((fail + 1)); echo "FAIL: $1"; fi; }
 
 TEXTS=(
+  '    Догол мөр нь хэвээр үлдэнэ.   '
   'Сайн уу, `touch CANARY` гэж бичээрэй.'
   'Үнэ нь $(touch CANARY) төгрөг.'
   'Тэр "гайхалтай" гэж хэлсэн; $HOME руу оч.'
@@ -64,8 +65,9 @@ for text in "${TEXTS[@]}"; do
   render "$filled" > "$WORK/run.sh"
   (cd "$WORK" && RECEIVED="$WORK/received" PATH="$WORK/bin:$PATH" bash "$WORK/run.sh" >/dev/null 2>&1)
   check "text [$text] ran a command" "$([ -e "$CANARY" ] && echo 1 || echo 0)"
-  got="$(cat "$WORK/received" 2>/dev/null)"
-  check "text [$text] did not reach the helper unchanged" "$([ "$got" = "$filled" ] && echo 0 || echo 1)"
+  # Byte for byte: the heredoc adds exactly one newline after the text.
+  check "text [$text] did not reach the helper unchanged" \
+    "$(printf '%s\n' "$filled" | cmp -s - "$WORK/received" && echo 0 || echo 1)"
 done
 
 echo "$pass passed, $fail failed"

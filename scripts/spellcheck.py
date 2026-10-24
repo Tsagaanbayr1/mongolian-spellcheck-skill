@@ -98,7 +98,14 @@ def run(text, with_suggestions=True):
 def _read_input(args):
     if args:
         return " ".join(args)
-    return sys.stdin.read().strip()
+    # Keep the text as written (indentation, trailing spaces); only drop the one
+    # newline that `echo` or a heredoc adds at the end.
+    text = sys.stdin.read()
+    if text.endswith("\r\n"):
+        return text[:-2]
+    if text.endswith("\n"):
+        return text[:-1]
+    return text
 
 
 def main(argv):
@@ -114,7 +121,7 @@ def main(argv):
         with_suggestions = False
         args = args[1:]
     text = _read_input(args)
-    if not text:
+    if not text.strip():
         raise SystemExit("usage: spellcheck.py [--check-only] \"<text>\"  (or pipe text via stdin)")
     print(json.dumps(run(text, with_suggestions), ensure_ascii=False))
 

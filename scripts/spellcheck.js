@@ -110,7 +110,9 @@ function readStdin() {
     let data = "";
     process.stdin.setEncoding("utf8");
     process.stdin.on("data", (c) => (data += c));
-    process.stdin.on("end", () => resolve(data.trim()));
+    // Keep the text as written (indentation, trailing spaces); only drop the one
+    // newline that `echo` or a heredoc adds at the end.
+    process.stdin.on("end", () => resolve(data.replace(/\r?\n$/, "")));
   });
 }
 
@@ -134,7 +136,7 @@ async function main() {
   }
 
   const text = args.length ? args.join(" ") : await readStdin();
-  if (!text) fail('usage: spellcheck.js [--check-only] "<text>"  (or pipe text via stdin)');
+  if (!text.trim()) fail('usage: spellcheck.js [--check-only] "<text>"  (or pipe text via stdin)');
 
   process.stdout.write(JSON.stringify(await run(text, withSuggestions)) + "\n");
 }
