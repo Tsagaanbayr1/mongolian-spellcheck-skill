@@ -24,12 +24,19 @@ you never construct API requests by hand.
 
 ## Workflow
 
-1. **Run the helper** on the text (prefer Python; fall back to Node):
+1. **Run the helper** on the text, passing it on **stdin through a quoted
+   heredoc** (prefer Python; fall back to Node with the same heredoc):
    ```bash
-   python3 scripts/spellcheck.py "<the Mongolian text>"
-   # or:  node scripts/spellcheck.js "<the Mongolian text>"
-   # long text: pipe via stdin →  echo "<text>" | python3 scripts/spellcheck.py
+   python3 scripts/spellcheck.py <<'MN_TEXT'
+   <the Mongolian text>
+   MN_TEXT
    ```
+   Never put the text inside quotes on the command line. Text to proofread often
+   comes from files and can contain backticks, `$(...)`, `$VAR` or quotes; on the
+   command line the shell would run or expand them. Inside `<<'MN_TEXT'` nothing is
+   expanded. If the text itself has a line that is exactly `MN_TEXT`, use another
+   delimiter that does not occur in it.
+
    It prints JSON: `{"text", "misspelled": [...], "suggestions": {word: [...]}}`.
 
 2. **If `misspelled` is empty**, report that no spelling errors were found. Done.
@@ -48,12 +55,14 @@ you never construct API requests by hand.
 
 ## Quick Reference
 
-| Action | Command |
+Every form reads the text (or word) from a quoted heredoc on stdin, as in step 1:
+
+| Action | Command (then the text, then `MN_TEXT`) |
 |--------|---------|
-| Check + suggest (default) | `python3 scripts/spellcheck.py "<text>"` |
-| Check only (no suggestions) | `python3 scripts/spellcheck.py --check-only "<text>"` |
-| One word's suggestions | `python3 scripts/spellcheck.py --suggest "<word>"` |
-| Node equivalents | `node scripts/spellcheck.js ...` (Node 18+) |
+| Check + suggest (default) | `python3 scripts/spellcheck.py <<'MN_TEXT'` |
+| Check only (no suggestions) | `python3 scripts/spellcheck.py --check-only <<'MN_TEXT'` |
+| One word's suggestions | `python3 scripts/spellcheck.py --suggest <<'MN_TEXT'` |
+| Node equivalents | `node scripts/spellcheck.js [--check-only\|--suggest] <<'MN_TEXT'` (Node 18+) |
 
 Underlying endpoints and the key algorithm: see `references/api.md`.
 
@@ -66,3 +75,5 @@ Underlying endpoints and the key algorithm: see `references/api.md`.
 - **Forgetting the no-error case.** Empty `misspelled` means the text is clean —
   say so instead of inventing changes.
 - **Hand-building API calls.** Always go through the script so the `key` is valid.
+- **Quoting the text on the command line.** `"…"` still runs backticks and
+  `$(...)` and expands `$VAR`. Always pass the text through `<<'MN_TEXT'`.

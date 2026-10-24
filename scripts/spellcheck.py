@@ -14,6 +14,9 @@ Usage:
     echo "текст" | python3 spellcheck.py
     python3 spellcheck.py --check-only "текст"     # skip suggestions
     python3 spellcheck.py --suggest "уулзалтандаа"  # one word only
+    python3 spellcheck.py <<'MN_TEXT'               # what agents should use:
+    ...text...                                      # nothing in it is expanded
+    MN_TEXT
 
 Output (stdout, JSON):
     {"text": "...", "misspelled": ["word", ...],
@@ -101,9 +104,9 @@ def _read_input(args):
 def main(argv):
     args = argv[1:]
     if args and args[0] == "--suggest":
-        word = " ".join(args[1:]).strip()
+        word = _read_input(args[1:]).strip()
         if not word:
-            raise SystemExit("usage: spellcheck.py --suggest <word>")
+            raise SystemExit("usage: spellcheck.py --suggest <word>  (or pipe the word via stdin)")
         print(json.dumps({"word": word, "suggestions": suggest(word)}, ensure_ascii=False))
         return
     with_suggestions = True

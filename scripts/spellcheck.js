@@ -15,6 +15,9 @@
  *     echo "текст" | node spellcheck.js
  *     node spellcheck.js --check-only "текст"      // skip suggestions
  *     node spellcheck.js --suggest "уулзалтандаа"  // one word only
+ *     node spellcheck.js <<'MN_TEXT'               // what agents should use:
+ *     ...text...                                   // nothing in it is expanded
+ *     MN_TEXT
  *
  * Output (stdout, JSON):
  *     {"text": "...", "misspelled": ["word", ...],
@@ -115,8 +118,9 @@ async function main() {
   let args = process.argv.slice(2);
 
   if (args[0] === "--suggest") {
-    const word = args.slice(1).join(" ").trim();
-    if (!word) fail("usage: spellcheck.js --suggest <word>");
+    const rest = args.slice(1);
+    const word = (rest.length ? rest.join(" ") : await readStdin()).trim();
+    if (!word) fail("usage: spellcheck.js --suggest <word>  (or pipe the word via stdin)");
     process.stdout.write(
       JSON.stringify({ word, suggestions: await suggest(word) }) + "\n"
     );
